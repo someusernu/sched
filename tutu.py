@@ -32,6 +32,10 @@ def tutu_today():
     return datetime.datetime.now().strftime('%d.%m.%Y')
 
 
+def tutu_yesterday():
+    return (datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%d.%m.%Y')
+
+
 class Trip:
     def __init__(self, cells):
         self.departure = self.get_departure(cells[0])
@@ -47,7 +51,10 @@ class Trip:
         else:
             self.warning = None
             self.warninfo = self.set_none_linked_event()
-            self.actual = self.set_none_linked_event()
+            if len(cells) == 6:
+                self.actual = self.set_none_linked_event()
+            else:
+                self.actual = self.get_departure(cells[6])
 
     def __str__(self, show_route=False):
         if show_route:
@@ -56,6 +63,8 @@ class Trip:
             return 'Отправление - в %s, прибытие - в %s, время в пути - %s.' % (self.departure.text, self.arrival.text,
                                                                                 self.time)
 
+    def get_actual(self, station):
+        ...
 
     def get_departure(self, cell):
         departure = LinkedEvent()
@@ -91,9 +100,13 @@ def check_first_row(rows):
     return True
 
 
-async def get_url_today(departure=43706, arrival=41406):
+async def get_url_today(yesterday, departure=43706, arrival=41406):
+    if yesterday:
+        url = glbls.URL_TUTU + str(departure) + '&st2=' + str(arrival) + '&date=' + tutu_yesterday()
+    else:
+        url = glbls.URL_TUTU + str(departure) + '&st2=' + str(arrival) + '&date=' + tutu_today()
     async with aiohttp.ClientSession() as sess:
-        rsp = await sess.get(glbls.URL_TUTU + str(departure) + '&st2=' + str(arrival) + '&date=' + tutu_today())
+        rsp = await sess.get(url)
         txt = await rsp.read()
         return txt.decode()
 
@@ -110,22 +123,22 @@ def get_roster(txt):
     if check_first_row(items):
         items.pop(0)
     full_sched = list()
-    for i in range(len(items) - 1):
+    for i in range(len(items)):
         cells = items[i].find_all('td', recursive=False)
-        if len(cells) == 9:
+        if (len(cells) == 9) or (len(cells) == 7):
             trip = Trip(cells)
             full_sched.append(trip)
     for item in full_sched:
         print(item)
 
 
-async def main(test=True):
+async def main(test=True, yesterday=False):
     if test:
-        toparse= await get_url_today(departure=41906)
+        toparse = await get_url_today(yesterday, departure=41906)
     else:
-        toparse = await get_url_today()
+        toparse = await get_url_today(yesterday)
     get_roster(toparse)
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(main(False, True))
