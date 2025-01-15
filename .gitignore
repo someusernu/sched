@@ -1,4 +1,4 @@
 # Default ignored files
 ./idea
 ./idea/*
-./set.py
+set.py
