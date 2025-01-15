@@ -1,0 +1,1 @@
+BASE_CRED = '/home/14/sched/base.json'
