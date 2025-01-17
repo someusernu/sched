@@ -2,3 +2,4 @@
 ./idea
 ./idea/*
 set.py
+poetry.lock

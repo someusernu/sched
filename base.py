@@ -15,10 +15,14 @@ async def base_connect(creation=False):
     base_cred = await base_creds()
     if creation:
         dbname = 'postgres'
+        user = base_cred['user']
+        password = base_cred['password']
     else:
         dbname = base_cred['base']
-    conn = await psycopg.AsyncConnection.connect(user=base_cred['user'], password=base_cred['password'],
-                                                 dbname=dbname, host=base_cred['host'], port=base_cred['port'])
+        user = base_cred['user_base']
+        password = base_cred['password_base']
+    conn = await psycopg.AsyncConnection.connect(user=user, password=password, dbname=dbname, host=base_cred['host'],
+                                                 port=base_cred['port'])
     cursor = conn.cursor()
     return conn, cursor
 
@@ -28,13 +32,13 @@ async def create_base():
     conn, cur = await base_connect(True)
     await cur.execute('create database %s;' % base_cred['base'])
     await conn.commit()
-    await cur.execute('create user schedler;')
+    await cur.execute("create user %s with password '%s';" % (base_cred['user_base'], base_cred['password_base']))
     await conn.commit()
-    await cur.execute('grant all privileges on %s to schedler;' % base_cred['base'])
+    await cur.execute('grant all privileges on %s to %s;' % (base_cred['base'], base_cred['user_base']))
     await conn.commit()
     await cur.close()
     await conn.close()
 
 
-def newbase():
-    ...
+async def create_tables():
+    conn, cur = await base_connect()

@@ -1,1 +1,1 @@
-BASE_CRED = '/home/14/sched/base.json'
+BASE_CRED = 'c:\\1\\rchi\\sched.json'
