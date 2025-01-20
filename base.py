@@ -12,33 +12,44 @@ async def base_creds():
 
 
 async def base_connect(creation=False):
-    base_cred = await base_creds()
+    creds = await base_creds()
     if creation:
         dbname = 'postgres'
-        user = base_cred['user']
-        password = base_cred['password']
+        user = creds['user']
+        password = creds['password']
     else:
-        dbname = base_cred['base']
-        user = base_cred['user_base']
-        password = base_cred['password_base']
-    conn = await psycopg.AsyncConnection.connect(user=user, password=password, dbname=dbname, host=base_cred['host'],
-                                                 port=base_cred['port'])
+        dbname = creds['base']
+        user = creds['user_base']
+        password = creds['password_base']
+    conn = await psycopg.AsyncConnection.connect(user=user, password=password, dbname=dbname, host=creds['host'],
+                                                 port=creds['port'])
     cursor = conn.cursor()
     return conn, cursor
 
 
 async def create_base():
-    base_cred = await base_creds()
+    creds = await base_creds()
     conn, cur = await base_connect(True)
-    await cur.execute('create database %s;' % base_cred['base'])
-    await conn.commit()
-    await cur.execute("create user %s with password '%s';" % (base_cred['user_base'], base_cred['password_base']))
-    await conn.commit()
-    await cur.execute('grant all privileges on %s to %s;' % (base_cred['base'], base_cred['user_base']))
-    await conn.commit()
+    await conn.set_autocommit(True)
+    await cur.execute('CREATE DATABASE %s;' % creds['base'])
+    chk = await cur.execute('''select 1 from pg_roles where rolname = '%s';''' % creds['user'])
+    chk = await chk.fetchone()
+    if chk is None:
+        await cur.execute('''create user %s with password '%s';''' % (creds['user_base'], creds['password_base']))
+    await cur.execute('grant all privileges on database %s to %s;' % (creds['base'], creds['user_base']))
     await cur.close()
     await conn.close()
 
 
 async def create_tables():
     conn, cur = await base_connect()
+    chk = await cur.execute('''select * from public.tables where table_name = 'users';''')
+    chk = chk.fetchall()
+    print(chk)
+
+
+async def drop_base():
+    conn, cur = await base_connect(True)
+    await conn.set_autocommit(True)
+    creds = await base_creds()
+    await cur.execute('drop database %s;' % creds['base'])
