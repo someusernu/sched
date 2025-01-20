@@ -141,4 +141,5 @@ async def main(test=True, yesterday=False):
 
 
 if __name__ == '__main__':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(main(False, True))

@@ -3,7 +3,9 @@ import asyncio
 
 
 async def main():
+    # await base.drop_base()
     await base.create_base()
+    await base.create_tables()
 
 
 if __name__ == '__main__':
