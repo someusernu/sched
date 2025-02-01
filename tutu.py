@@ -1,4 +1,5 @@
 import asyncio
+import os
 from multiprocessing.spawn import set_executable
 
 import aiohttp
@@ -125,21 +126,33 @@ def get_roster(txt):
     full_sched = list()
     for i in range(len(items)):
         cells = items[i].find_all('td', recursive=False)
+        print(cells)
         if (len(cells) == 9) or (len(cells) == 7):
             trip = Trip(cells)
             full_sched.append(trip)
-    for item in full_sched:
-        print(item)
+    return full_sched, unusual
 
 
-async def main(test=True, yesterday=False):
+async def main():
+    await crt_rspns()
+
+
+async def crt_rspns(test=False, yesterday=False):
     if test:
         toparse = await get_url_today(yesterday, departure=41906)
     else:
         toparse = await get_url_today(yesterday)
-    get_roster(toparse)
+    nw = datetime.datetime.now()
+    trips, unusual = get_roster(toparse)
+    msg = ''
+    if unusual:
+        msg = 'Внимание, в расписании есть изменения!'
+    for trip in trips:
+        ...
+
 
 
 if __name__ == '__main__':
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    asyncio.run(main(False, True))
+    if 'Wind'.casefold() in os.name:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    asyncio.run(main())
